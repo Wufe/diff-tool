@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,6 +34,10 @@ func main() {
 	secondLines := strings.Split(string(secondFileContent), "\n")
 
 	queueChan := make(chan struct{}, conf.Parallel)
+
+	if conf.Dicotomic {
+		sort.Strings(secondLines)
+	}
 
 	results := startQueue(&conf, queueChan, &firstLines, &secondLines)
 
@@ -111,32 +116,38 @@ L:
 func searchLine(firstIndex int, firstPtr *([]string), secondPtr *([]string), returnChan chan string, queueChan chan struct{}, wg *sync.WaitGroup, confPtr *cliConf) {
 	firstLine := (*firstPtr)[firstIndex]
 	found := false
-	for _, secondLine := range *secondPtr {
-		left := firstLine
-		right := secondLine
-		if confPtr.IgnoreCase {
-			left = strings.ToLower(left)
-			right = strings.ToLower(left)
+	if confPtr.Dicotomic {
+		if sort.SearchStrings(*secondPtr, firstLine) < len(*secondPtr) {
+			found = true
 		}
-		if !confPtr.LeftContainsRight && !confPtr.RightContainsLeft {
-			if left == right {
-				found = true
-				break
+	} else {
+		for _, secondLine := range *secondPtr {
+			left := firstLine
+			right := secondLine
+			if confPtr.IgnoreCase {
+				left = strings.ToLower(left)
+				right = strings.ToLower(left)
 			}
-		} else if confPtr.LeftContainsRight && !confPtr.RightContainsLeft {
-			if strings.Contains(left, right) {
-				found = true
-				break
-			}
-		} else if !confPtr.LeftContainsRight && confPtr.RightContainsLeft {
-			if strings.Contains(right, left) {
-				found = true
-				break
-			}
-		} else if confPtr.LeftContainsRight && confPtr.RightContainsLeft {
-			if strings.Contains(left, right) || strings.Contains(right, left) {
-				found = true
-				break
+			if !confPtr.LeftContainsRight && !confPtr.RightContainsLeft {
+				if left == right {
+					found = true
+					break
+				}
+			} else if confPtr.LeftContainsRight && !confPtr.RightContainsLeft {
+				if strings.Contains(left, right) {
+					found = true
+					break
+				}
+			} else if !confPtr.LeftContainsRight && confPtr.RightContainsLeft {
+				if strings.Contains(right, left) {
+					found = true
+					break
+				}
+			} else if confPtr.LeftContainsRight && confPtr.RightContainsLeft {
+				if strings.Contains(left, right) || strings.Contains(right, left) {
+					found = true
+					break
+				}
 			}
 		}
 	}
@@ -229,7 +240,9 @@ func parseCLI() cliConf {
 }
 
 func printDefaultCLI(conf *cliConf) {
-	fmt.Println(fmt.Sprintf("\nUsage: %s <file1> <file2> [--dicotomic --output <outputfile> --parallel <number> --threads <number> --ignore-case --left-contains-right --right-contains-left]\n\nLooks for lines from file1 that do not appear between file2's lines.\n", "diff"))
+	fmt.Println(fmt.Sprintf("\nUsage: %s <file1> <file2> [--dicotomic --output <outputfile> --parallel <number> --threads <number> --ignore-case --left-contains-right --right-contains-left]\n\n", "diff"))
+	fmt.Println("Looks for lines from file1 that do not appear between file2's lines.\n")
+	fmt.Println("--dicotomic\nUses binary search.\nThe file to be searched against will be sorted.\n\n")
 	fmt.Println("CURRENT CONFIGURATION")
 	fmt.Println(fmt.Sprintf("Parallel processes -> [%d]", conf.Parallel))
 	fmt.Println(fmt.Sprintf("Real threads -> [%d]", conf.Threads))
