@@ -35,7 +35,7 @@ func main() {
 
 	queueChan := make(chan struct{}, conf.Parallel)
 
-	if conf.Dicotomic {
+	if conf.Dichotomic {
 		sort.Strings(secondLines)
 	}
 
@@ -116,7 +116,7 @@ L:
 func searchLine(firstIndex int, firstPtr *([]string), secondPtr *([]string), returnChan chan string, queueChan chan struct{}, wg *sync.WaitGroup, confPtr *cliConf) {
 	firstLine := (*firstPtr)[firstIndex]
 	found := false
-	if confPtr.Dicotomic {
+	if confPtr.Dichotomic {
 		if sort.SearchStrings(*secondPtr, firstLine) < len(*secondPtr) {
 			found = true
 		}
@@ -162,7 +162,7 @@ type cliConf struct {
 	First             string
 	Second            string
 	Output            string
-	Dicotomic         bool
+	Dichotomic        bool
 	Parallel          int
 	Threads           int
 	IgnoreCase        bool
@@ -174,7 +174,7 @@ func parseCLI() cliConf {
 
 	conf := cliConf{
 		Output:            "",
-		Dicotomic:         false,
+		Dichotomic:        false,
 		Threads:           5,
 		Parallel:          10,
 		IgnoreCase:        false,
@@ -219,8 +219,8 @@ func parseCLI() cliConf {
 				conf.Threads = threads
 			}
 		}
-		if arg == "--dicotomic" {
-			conf.Dicotomic = true
+		if arg == "--dichotomic" {
+			conf.Dichotomic = true
 		}
 		if arg == "--help" {
 			printDefaultCLI(&conf)
@@ -240,9 +240,9 @@ func parseCLI() cliConf {
 }
 
 func printDefaultCLI(conf *cliConf) {
-	fmt.Println(fmt.Sprintf("\nUsage: %s <file1> <file2> [--dicotomic --output <outputfile> --parallel <number> --threads <number> --ignore-case --left-contains-right --right-contains-left]\n\n", "diff"))
+	fmt.Println(fmt.Sprintf("\nUsage: %s <file1> <file2> [--dichotomic --output <outputfile> --parallel <number> --threads <number> --ignore-case --left-contains-right --right-contains-left]\n\n", "diff"))
 	fmt.Println("Looks for lines from file1 that do not appear between file2's lines.\n")
-	fmt.Println("--dicotomic\nUses binary search.\nThe file to be searched against will be sorted.\n\n")
+	fmt.Println("--dichotomic\nUses binary search.\nThe file to be searched against will be sorted.\n\n")
 	fmt.Println("CURRENT CONFIGURATION")
 	fmt.Println(fmt.Sprintf("Parallel processes -> [%d]", conf.Parallel))
 	fmt.Println(fmt.Sprintf("Real threads -> [%d]", conf.Threads))
