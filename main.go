@@ -117,7 +117,9 @@ func startQueue(confPtr *cliConf, queueChan chan struct{}, firstPtr *([]string),
 		for {
 			select {
 			case searchResultLine := <-searchResultChan:
-				fileHandle.WriteString(searchResultLine + "\n")
+				if confPtr.Output != "" {
+					fileHandle.WriteString(searchResultLine + "\n")
+				}
 				resultList = append(resultList, searchResultLine)
 			default:
 			}
